@@ -63,22 +63,21 @@ func ReceiveAnnounce(c *gin.Context) {
 // 优先级：IP > IPv4 > IPv6 > ctx.ip
 func seedIP(ctx *gin.Context, request *model.AnnounceRequest) error {
 	// 如果上报的 IPv4 地址有误，则清空
-	if ip := net.ParseIP(request.IPv4); ip == nil || len(ip) != net.IPv4len {
+	if !IsIPv4(request.IPv4) {
 		request.IPv4 = ""
 	}
 
 	// 如果上报的 IPv6 地址有误，则清空
-	if ip := net.ParseIP(request.IPv6); ip == nil || len(ip) != net.IPv6len {
+	if !IsIPv6(request.IPv6) {
 		request.IPv6 = ""
 	}
 
 	// 如果上报的 IP 地址有效，则覆盖对应的 IPv4/IPv6 地址
-	if ip := net.ParseIP(request.IP); ip != nil {
-		if len(ip) == net.IPv4len {
-			request.IPv4 = request.IP
-		} else {
-			request.IPv6 = request.IP
-		}
+	if IsIPv4(request.IP) {
+		request.IPv4 = request.IP
+	}
+	if IsIPv6(request.IP) {
+		request.IPv6 = request.IP
 	}
 
 	// 如果均为空，则使用客户端地址填充
@@ -97,6 +96,11 @@ func seedIP(ctx *gin.Context, request *model.AnnounceRequest) error {
 func IsIPv4(ipAddr string) bool {
 	ip := net.ParseIP(ipAddr)
 	return ip != nil && strings.Contains(ipAddr, ".")
+}
+
+func IsIPv6(ipAddr string) bool {
+	ip := net.ParseIP(ipAddr)
+	return ip != nil && strings.Contains(ipAddr, ":")
 }
 
 func fillAgent(ctx *gin.Context, request *model.AnnounceRequest) error {
